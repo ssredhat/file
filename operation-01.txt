@@ -1,0 +1,119 @@
+ftp://172.40.50.118/share/operation_note/
+
+环境准备：
+-----------------------------------------------------------------------
+Client: eth0(192.168.4.100)		4网段
+-----------------------------------------------------------------------
+Proxy:  eth0(192.168.4.5)			4网段
+				eth1(192.168.2.5)			2网段
+-------------------------------------------------------------------------
+Web1:		eth1(192.168.2.100)  2网段
+
+
+运维（7天）
+
+代理软件
+nginx
+
+安装软件【依赖】【版本冲突】【测试】
+修改配置文件[优化]
+启动服务
+
+运行3-5年，错误【排错】【日志】【计算机英语】
+
+运维  一门脚本语言[shell,python,perl之一]
+
+
+
+
+4.5代理服务器查看日志和缓存
+/var/log/squid/access.log
+ls /var/spool/squid/
+ls /var/spool/squid/00/00
+
+2.100Web服务器查看日志
+/var/log/httpd/acces_log
+
+
+
+
+													北京[sina]
+
+cwww.sina.com>ip	上海
+cwww.sina.com>ip	广州
+									武汉
+									深圳
+							.. ..
+
+
+squid 缓存页面是在硬盘上/var/spool/squid/
+squid传统，资料多，排错，正向，反向，透明代理
+varnish 缓存数据在硬盘或内存，反向代理，http加速
+
+源码安装软件：
+1.tar -xf 解压
+2. cd ; ./configure ; make ;make install
+备注：解决依赖关系
+
+3.作软链接或者修改PATH路径
+4.cp提供一个启动服务
+5.cp配置文件
+
+
+
+ftp://172.40.50.118/share/lnmp_soft-2017-03-28.tar.gz
+
+下载，传给192.168.4.5
+
+
+varnish 两个配置文件
+
+/etc/sysconfig/varnish		前端配置文件
+端口，用户，进程...
+
+/etc/varnish/default.vcl  后端配置文件
+
+
+
+
+
+1.修改后端httpd的页面内容
+2.客户端访问页面[缓存中的过期数据]
+
+
+3.使用命令手动更新缓存数据
+varnishadm -S /etc/varnish/secret -T 127.0.0.1:6082 ban.url z.html
+
+
+
+1.环境【新的clone-vm7】
+2.squid  【httpd，squid】
+	rm -rf 	/var/spool/squid/00/00/0000001
+ 
+3.varnish[squid关闭，配置文件]
+						httpd
+
+	varnishadmin  backend.list
+	varnishadmin  storage.list
+	varnishadmin  ban.url  1.thml
+
+curl http://192.168.4.5/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

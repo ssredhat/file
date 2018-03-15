@@ -1,0 +1,134 @@
+Nginx[静态，动态]
+
+页面是html，mp3,mp4,txt,doc,pdf
+动态脚本语言:shell,PHP,java
+
+		LNMP
+(Linux+Nginx+MariaDB==mysql+PHP|Python)
+
+在192.168.4.5
+软件包列表：LNMP
+
+实验1：部署LNMP环境
+nginx[web服务,接收用户的请求]
+php	 [解释器]
+yum -y localinstall php-fpm-5.4.16<tab> [服务]
+mariadb				[数据库客户端]
+mariadb-server [数据库服务器]
+mariadb-devel  [依赖包]
+php-mysql		[php连接mysql的扩展包]
+
+启动所有服务：
+nginx											启动[80]
+systemctl start php-fpm		启动[9000]
+systemctl start mariadb		启动[3306]
+
+netstat -nutlp |grep 80 | 9000 |3306
+
+
+实验2：Nginx动静分离
+
+   				nginx[静态]
+					root html
+					nginx[动态]
+										PHP:9000
+	
+判断，如果用户访问的是静态页面，则找到，直接返回
+		如果用户访问的是动态页面，则转发给9000
+
+		location / {
+				root html;
+		}
+		location ~ \.php$
+			root  html;
+			fastcgi_pass  127.0.0.1:9000;
+			include fastcgi.conf;
+	}
+
+vim  /usr/local/nginx/html/test.php
+<?php
+phpinfo();
+?>
+
+常见问题：
+1.出现下载页面 【配置文件中没有php转发】
+2.File not found. 【转发设置不正确】[SELinux]
+3.An error occurred.
+    【转发给9000后，无响应，php未启动】
+
+
+地址重写
+	  rewrite  正则   跳转后的URL [选项];
+
+案例1：访问a.html跳转到b.html
+
+vim /usr/local/nginx/conf/nginx.conf
+... ...
+	server {
+			listen 80
+			server_name localhost;
+	location / {
+			rewrite a.html /b.html  redirect;
+	}
+#echo "BB" > /usr/local/nginx/html/b.html
+#nginx -s reload
+
+
+案例2：访问192.168.4.5跳转到www.tmooc.cn
+vim /usr/local/nginx/conf/nginx.conf
+... ...
+	server {
+			listen 80
+			server_name localhost;
+	location / {
+			rewrite ^/  http://www.tmooc.cn;
+	}
+
+附加：
+访问旧的网站页面，跳转到新的网站相同页面
+  rewrite ^/(.*)     http://www.jd.com/$1;
+ 保留和粘贴
+
+
+案例2：不同浏览器访问相同页面返回结果不同
+
+
+ie  http://192.168.4.5/test.html 
+
+firefox http://192.168.4.5/test.html
+
+uc  http://192.168.4.5/test.html
+
+nginx【内置变量】
+vim /usr/local/nginx/conf/nginx.conf
+  server {
+		... ...
+	if ($http_user_agent ~* curl){
+		rewrite ^/(.*)  /curl/$1;
+	}   
+#cd  /usr/local/nginx/html
+#echo "1" >test.html
+#mkdir curl
+#echo "2" >curl/test.html
+#nginx -s reload
+firefox http://192.168.4.5/test.html
+curl http://192.168.4.5/test.html
+
+案例：如果用户访问的页面不存则转到首页
+vim /usr/local/nginx/conf/nginx.conf
+ server {
+		... ...
+	if (!-e  $request_filename){
+		rewrite ^/  http://192.168.4.5;
+	}  
+#nginx -s reload
+
+rewrite 正则  URL [选项]
+rewrite选项：
+last		停止执行其他rewrite
+break		停止执行其他rewrite，并结束请求
+redirect	临时重定向
+permament	永久重定向
+
+
+

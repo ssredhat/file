@@ -1,0 +1,207 @@
+Nginx(web服务器)
+
+nginx是模块化软件
+nginx【100功能】
+
+依赖包，红帽光盘一般都有一个devel的标志
+
+./configure --with-xxx --with  --with
+make
+make install
+
+cd /usr/local/nginx
+conf		配置文件
+logs		日志和pid文件
+html		页面
+sbin		程序
+
+#ln -s /usr/local/nginx/sbin/nginx /usr/sbin/
+
+#nginx						启动服务
+#nginx -s stop		关闭服务
+#nginx -s reload	重新加载配置文件
+#nginx -V					查看nginx信息
+
+如何升级【1.8--->1.9】
+
+下载1.9
+tar -xf nginx.1.9
+cd nginx.1.9
+./configure
+make 
+备份老的程序
+cp objs/nginx  /usr/local/nginx/sbin/
+
+
+nginx.conf配置文件框架
+
+全局设置
+用户
+进程
+并发量
+
+http{
+	server{
+		listen 80;
+		server_name www.a.com;
+		root html;  
+	}
+}
+
+
+
+实验1：用户认证：
+
+vim /usr/local/nginx/conf/nginx.conf
+....
+http{
+		server {
+				listen 80;
+				server_name localhost;
+auth_basic "任意字符:";
+auth_basic_user_file "/usr/local/nginx/pass";
+}
+}
+#yum -y install httpd-tools
+#htpasswd -cm  /usr/local/nginx/pass  tom
+>密码
+-c 创建密码文件[create]  -m[加密密码]md5
+#nginx -s reload
+
+
+虚拟主机：基于IP，基于域名，基于端口
+
+实验2：虚拟主机(基于域名)
+
+vim /usr/local/nginx/conf/nginx.conf
+server {
+        listen       80;
+        server_name  www.a.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+        }
+    }
+86行：server {
+        listen       80;
+        server_name  www.b.com;
+        location / {
+            root   web;
+            index  index.html index.htm;
+        }
+    }
+#mkdir /usr/local/nginx/web
+#echo "11" > /usr/local/nginx/web/index.html
+#nginx -s reload
+
+客户验证：
+vim /etc/hosts
+127.0.0.1  localhost
+192.168.4.5   www.a.com   www.b.com
+
+
+#curl -u tom:123 http://www.a.com
+#curl http://www.b.com
+
+
+
+
+
+
+
+HTTP协议，明文协议
+
+加密算法：
+对称算法（AES，DES）不适合网络加码
+非对称算法（RSA，DSA）
+哈希值（md5,sha128,sha256...)数据完整性校验
+
+实验3：加密网站https
+#cd /usr/local/nginx/conf
+#openssl genrsa > my.key  //生成私钥
+#openssl req -new -x509 -key my.key  -out  my.crt										//生成证书(公钥)
+回答：国家，省份，城市，公司，部门，主机，邮箱
+
+#vim /usr/local/nginx/conf/nginx.conf
+....
+server {
+			listen 443 ssl;
+			server_name www.c.com;
+		ssl_certificate      证书;
+    ssl_certificate_key  私钥;
+          ... ...
+}
+#nginx -s reload
+
+客户验证：
+#vim /etc/hosts
+192.168.4.5   www.c.com
+#firefox  https://www.c.com
+
+
+实验4：调度器
+--------------------------------------------------------------
+client：	eth0	192.168.4.100
+---------------------------------------------------------------
+Proxy:  eth0	192.168.4.5
+				eth1	192.168.2.5
+--------------------------------------------------------------
+Web1:		eth1	192.168.2.100
+---------------------------------------------------------------
+Web2:		eth1	192.168.2.200
+-----------------------------------------------------------------
+实验4：集群调度器（负载均衡）
+
+1.web1和web2做相同操作：
+#yum -y install httpd
+#echo "2.X00" > /var/www/html/index.html
+#systemctl start  httpd
+#firewall-cmd --set-default-zone=trusted
+
+2.Nginx调度器操作：
+#vim /usr/local/nginx/conf/nginx.conf
+http{
+		upstream  webs  {							定义集群
+			server 192.168.2.100;
+			server 192.168.2.200;
+		}       
+		server {
+			listen 80;
+			server_name localhost;
+			location / {
+				proxy_pass  http://webs;	调用集群
+					root html;
+			}	
+		}
+}						
+
+
+实验：集群调度器设置
+vim /usr/local/nginx/conf/nginx.conf
+... ...
+    upstream webs {
+	ip_hash;
+	server 192.168.2.100  weight=1 max_fails=1 fail_timeout=30;
+	server 192.168.2.200;
+}
+集群权重：weight=2;
+最大失败次数：max_fails=2
+失败超时时间：fail_timeout=30
+标记主机宕机：down
+相同客户端访问相同服务器：ip_hash
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
