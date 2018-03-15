@@ -1,0 +1,342 @@
+ystemctl  stop  firewalld
+setenforce  0
+配置固定ip地址55
+能够和宿主机通信
+
+需求：
+在ip 地址是X.X.X.55 主机上部署mysql数据库服务器。
+
+一、零基础入门
+数据库服务器：存储数据的
+
+1  部署数据库服务器的过程？
+
+购买服务器（CPU  内存   存储设备）  
+(HP   DELL    联想)   5W
+
+
+安装操作系统 ？  rhel7 
+windows   unix    linux
+
+提供数据库服务的软件有哪些？
+mysql  \ mariadb   \ mongodb   
+oracle  \ db2   \ sql  server
+
+哪些是商业软件？
+哪些是开源软件？
+哪些时跨平台软件？
+windows   unix    linux
+                              rhel7 
+
+即跨平台又开源？
+
+软件包的来源？ 
+操作系统安装光盘
+官网下载
+
+
+生成环境下的应用？
+LAMP   LNMP  网站运行平台
+
+mysql 能够存储的数据？
+音频  视频  图片  字符  数字
+
+哪些公司在使用mysql服务？
+金融机构  购物网站     娱乐网站   论坛网站
+
+软件包的封包类型？ rpm  、 源码
+++++++++++++++++++++++++++++++
+装包
+#rpm -e  --nodeps  mariadb-server  #rpm -e  --nodeps  mariadb
+#tar -xvf  mysql-5.7.17-1.el7.x86_64.rpm-bundle.tar 
+#rm -rf mysql-community-server-minimal-5.7.17-1.el7.x86_64.rpm
+#yum -y  install  perl-Data-Dumper  
+#yum -y  install perl-JSON    
+#rpm -Uvh mysql-community-*.rpm
+#rpm -qa  | grep -i mysql
+
+修改配置文件  /etc/my.cnf
+
+启动服务
+
+#systemctl  start mysqld
+#systemctl  status mysqld
+#systemctl  enable mysqld
+#netstat -utnalp  | grep  :3306
+
+设置数据库管理员本机登录的密码
+# grep password /var/log/mysqld.log
+#mysql   -uroot   -p"初始密码"
+mysql> 
+set global validate_password_policy=0;
+
+mysql>
+set global validate_password_length=6;
+
+mysql> alter  user  root@"localhost"  identified by "123456";
+
+mysql>quit
+
+#mysql  -uroot  -p123456
+mysql>
+
+#vim /etc/my.cnf
+[mysqld]
+validate_password_policy=0
+validate_password_length=6
+:wq
+#systemctl  stop  mysqld
+#systemctl  start  mysqld
+#mysql  -uroot  -p123456
+mysql>
+
+连接数据库服务
+#which  mysql
+#mysql  -hip   -u用户名   -p密码   库名
+
+把数据存储到数据库服务器上过程？
+1 连接数据库服务器
+mysql   -hlocalhost   -uroot   -p密码
+
+2 创建库
+
+3 创建表
+create   table  库名.表(
+字段名    类型(宽度)，
+字段名    类型(宽度)，
+字段名    类型(宽度)
+);
+
+create   table  game.stuinfo(
+name    char(10),   
+age       int,
+class   char(7)
+);
+
+4 插入记录 
+insert  into    库名.表  values(字段值列表);
+
+insert  into   gamedb.stuinfo  values("jim",21,"nsd1704")，
+
+("jim",21,"nsd1704");
+
+查看表结构
+desc  库名.表;
+
+查看表记录
+select  *  from gamedb.stuinfo;
+
+删除表记录
+delete  from 表名;
+
+删除表
+drop  table  表名;
+
+5断开连接
+mysql>quit
+++++++++++++++++++++++++++++++
+#show   databases;
+#select database();
+#create  database  gamedb;
+#use   gamedb;
+#show  tables;
+#create  table   gamedb.t1(name char(10),age  int);
+#desc  gamedb.t1;
+#select  *  from  gamedb.t1;
+#insert into  gamedb.t1  values("bob",21);
+#insert into  gamedb.t1  values("lucy",18);
+#select   * from gamedb.t1;
+#delete from gamedb.t1;
+#drop   table  gamedb.t1;
+#drop  database  gamedb;
+
+创建表的语法格式
+create  table  库名.表名(
+字段名1    类型(宽度)   约束条件，
+字段名2    类型(宽度)   约束条件，
+字段名N    类型(宽度)   约束条件，
+);
+
+
+MySQL数据类型？ 
+字符类型  :  （字符）
+char   255    定长
+varchar   65532  变长
+
+大文本（音频  视频  图片）
+text
+blob
+
+create   table   t2(
+name   char(5)，
+homeaddr  varchar(20)
+);
+
+insert  into   t2  values("bob","beijing");
+
+t1	t2
+name	name
+char(10)	varchar(3)
+lucy	lucy
+ab  	ab
+x                x
+
+
++++++++++++++++++++++++++++++++
+数值类型：
+11
++11
+
+-17
+                                          unsigned
+整型                   有符号    无符号
+tinyint                  
+smallint
+mediumint
+int
+bigint
+
+create   table   t6(
+name   char(5)，
+homeaddr  varchar(20),
+age    tinyint   unsigned
+);
+
+
+浮点
+整数.小数    总位数
+2088.66        6
+xxxx.xx
+
+float(n,m)
+double(n,m)
+n   总位数
+m  小数位数
+
+float(7,2)
+xxxxx.xx
+99999.99
+-99999.99
+
+1891.88
+pay   float(5,2)
+xxx.xx
+999.99
+-999.99
+
+create   table   t7(
+name   char(5),
+homeaddr  varchar(20),
+age    tinyint   unsigned,
+pay    float(7,2)    
+);
+
++++++++++++++++++++++++++++++++
+日期时间类型
+年 year       YYYY    2017 
+日期date    YYYYMMDD   20170713
+时间 time   hhmmss         155548
+
+日期时间
+timestamp   yyyymmddhhmmss    20170713155548
+datetime      yyyymmddhhmmss    20170713155548
+
+
+create   table   t8(
+name   char(5),
+homeaddr  varchar(20),
+age    tinyint   unsigned,
+pay    float(7,2),
+s_year   year,
+birthday  date,
+up_time    time,
+meettint    datetime     
+);
+
+insert into  t8 values
+
+("bob","shanghai",21,18880,1989,20171120,083000,20170707183000);
+
+时间函数
+year()   date()   month()  day()    time()   now() 
+  年       日期        月           几号    时间     当前日期时间
+
+mysql>select    year(20190823);
+mysql>select    now();
+mysql>select    year( now() );
+mysql>select    month( now() );
+
+insert into  t8 values("lucy","shanghai",21,18880,year(20130918),date
+
+(now()),time(now()),now() );
+
+++++++++++++++++++++++++++++++
+枚举类型（字段的值在列举的范围内选择）
+enum(值1，值2，值n)   单选
+set(值1，值2，值n)   多选
+
+create   table   t9(
+name   char(5),
+sex   enum("boy","girl","no"),
+homeaddr  varchar(20),
+age    tinyint   unsigned,
+likes  set("game","film","music","book","it"),
+pay    float(7,2),
+s_year   year,
+birthday  date,
+up_time    time,
+meettint    datetime     
+);
+
+ insert into  t9  values
+
+("lucy","girl","beijing",23,"film,book,it",20000,1990,20171120,083000,20
+
+170713200000);
+
+ insert into  t9  values
+
+("bob",1,"beijing",23,"film,book,football",20000,1990,20171120,083000,
+
+20170713200000);
+
+字段约束条件？
+作用：限制如何给字段赋值
+Null   是否允许为null    默认null       not  null
+Key    索引
+Default  默认值      default   值
+Extra  额外设置 
+
+create  table   t10(
+name  char(10)  not  null  ,
+age  tinyint  unsigned   default  25,
+sex  enum("boy","girl","no")   not null   default  "boy",
+likes  set("game","film","music","book","it")  default  "game,it",
+mail  varchar(30)  default "student@tedu.cn"
+);
+
+insert  into   t10(name)  values("bob");select  * from t10;
+insert  into   t10(name)  values(null);
+insert  into   t10    values("lucy",31,"no","book","stu@163.com");
+
+                        add               modify              drop         change
+修改表结构： 添加新字段  修改字段类型   删除字段  修改字段名
+
+alter   table  表名  执行动作；
+
+alter table  t2 add  age  tinyint  unsigned  ;
+
+alter table  t2 add   stu_num   char(7)  default  "nsd1704"   first;
+
+alter table  t2 add  sex   enum("m","w") not null  default  "m"  after name;
+
+alter table  t2 modify  name varchar(10) not null default  "";
+
+alter table  t2 drop homeaddr, drop  name;
+
+ alter table  t2 change  stu_num  stu_id char(7) default  "nsd1704";
+
+ alter table  t10 modify likes set('game','film','music','book','it') default "game,it" after mail;
+
+
+alter table   t10  rename  t2;
