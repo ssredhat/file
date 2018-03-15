@@ -1,0 +1,105 @@
+192.168.2.100
+192.168.2.200
+
+Redis[noSQL数据库，KV数据库，缓存数据库]
+redis支持永久存数据
+redis功能更多
+
+1.安装Redis
+# yum -y install gcc
+#cd  /root/lnmp_soft
+#tar -xf  redis-3.0.6.tar.gz
+#cd redis-3.0.6
+#make && make install
+问题：配置文件，PATH，启动脚本
+#./utils/install_server.sh  【初始化】
+
+
+2.简单测试（192.168.2.100）
+#redis-cli
+>set key  "hello the world"
+>get key
+>set key "hello the redis" EX 5
+>get key
+>incr hit
+>decr hit
+
+
+Redis支持的数据类型
+字符型常用指令： <参考TTS案例>
+hash表常用指令：<同上>
+列表常用指令：	<同上>
+tom {
+age=11
+addreess=beijing
+phone=1333544545
+sex=female
+}
+
+hset lily  phone 13333333
+hset lily  sex  female
+hset lily  addr shanghai
+hget lily  sex
+hget lily  addr
+hgetall lily
+hmset jerry sex male phone 1388888 addr chao
+hdel  jerry   sex
+hdel  jerry   phone
+hkeys jerry
+hvals jerry
+
+列表，先进后出的桶
+购买记录,聊天记录, 图文直播
+lpush list1  a
+lpush list1  b
+lpush list1  c
+lrange list1 0 -1
+lindex list1  2			精确查找第2位
+lpop	 list1				删除头部
+rpush  list1 xx
+set key "hello"
+ttl  key
+expire  key  50
+persist  key
+
+
+192.168.2.100主  			192.168.2.200从
+主从同步：
+
+1.主服务器操作192.168.2.100：
+#vim /etc/redis/6379.conf
+397:requirepass 123456   //给主服务器配置密码
+
+#/etc/init.d/redis_6379 restart  重启服务
+
+#redis-cli -a 123456   //输入密码才能使用数据库
+
+#vim /etc/init.d/redis_6379
+$CLIEXEC -a 123456 -p $REDISPORT shutdown
+43行给启动脚本添加一个密码-a 123456
+
+#/etc/init.d/redis_6379 restart  重启服务
+
+2.从服务器操作192.168.2.200:
+#vim /etc/redis/6379.conf
+211:slaveof  192.168.2.100  6379
+218:masterauth 123456
+定义谁是主服务器，端口是多少，密码是多少
+
+#/etc/init.d/redis_6379 restart  重启服务
+验证：主服务器写数据，从服务器自动同步，可查询该数据
+主服务器set，  从服务器get
+
+
+ftp://172.40.50.118/share/operation_note/homework/
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,254 @@
+测试脚本（服务器414报错）
+#!/bin/bash
+url=http://192.168.4.5/
+for i in {1..5000}
+do
+	url=${url}v$i=i
+done
+echo $url
+
+#ab -c 2000 -n 2000 http://192.168.4.5
+（服务器报错too many open files）
+
+#curl -I http://192.168.4.5
+（查看服务器信息-暴露版本信息）
+
+
+nginx全局优化：
+vim /usr/local/nginx/conf/nginx.conf
+worker_processes 2;		//与CPU核心数量一致
+events {
+worker_connections 10000;  
+//每个worker最大并发连接数
+}
+http {
+server_tokens off;
+//不显示Nginx具体版本号
+sendfile on;
+//提升Nginx读文件性能
+tcp_nodelay on;
+//关闭TCP缓延迟发送数据
+keepalive_timeout 10;
+//保持连接的超时时间
+gzip on;
+gzip_min_length 1000;
+gzip_comp_level 4;
+gzip_types text/plain text/css application/json application/x-javascript text/xml
+application/xml application/xml+rss text/javascript;
+client_header_buffer_size 1k;
+//默认请求包头信息的缓存
+large_client_header_buffers 4 4k;
+ //大请求包头部信息的缓存个数与容量
+//先根据client_header_buffer分配,如果不够,再根据large值分配
+open_file_cache max=2000 inactive=20s;
+open_file_cache_valid 60s;
+open_file_cache_min_uses 5;
+open_file_cache_errors off;
+//设置服务器最大缓存2000个文件句柄,关闭20秒内无请求的文件句柄
+//文件句柄的有效时间是60秒,60秒后过期
+//只有访问次数超过5次会被缓存
+}
+
+
+
+静态缓存在用户的电脑【视频、音乐、图片】
+																			
+vim /usr/local/nginx/conf/nginx.conf 
+   ... ...
+server {
+		location / {}
+		location ~ \.(jpg|png|flv)$ {
+				expires 30;
+		}    
+}
+#nginx -s reload
+#find / -name "*.jpg"
+#cp xx.jpg  /usr/local/nginx/html/x.jpg
+#firefox 192.168.4.5/x.jpg
+#about:cache
+
+
+返回自定义的报错页面
+#vim /usr/local/nginx/conf/nginx.conf
+server {
+	... ...
+	charset utf-8;
+	error_page  404 400   /404.html;
+}
+#nginx -s reload
+#cd /usr/local/nginx/html
+#echo "网站崩溃了"  > 404.html
+
+
+缓存
+
+浏览器[缓存]
+varnish[缓存]异地
+nginx硬盘[缓存]
+
+
+盗链接
+
+youku，letv，aiqiyi,tudou
+防止盗链
+
+http头部信息
+
+Referer：我从哪里来
+
+
+www.sina.com
+Referer:www.sina.com
+
+
+百度：搜索sina
+链接www.sina.com
+
+Referer:www.baidu.com
+
+            判断referer是不是www.sina.com
+rewrite ^/  http://www.sina.com/a.jpg
+
+步骤：
+# cat /usr/local/nginx/conf/nginx.conf
+location ~* \.(gif|jpg|png|swf|flv)$ {
+valid_referers none blocked www.tarena.com;
+if ($invalid_referer) {
+rewrite ^/ http://www.tarena.com/403.html;
+}
+}
+
+nginx总结：
+用户认证
+虚拟主机：IP，端口，域名
+SSL加密网站
+调度器（负载均衡，web高可用）
+LNMP（动态）
+地址重写
+优化[并发，版本，压缩，缓存，keepalive，自定义报错]
+
+
+++++++++++++++++++++++++++++++++++++++
+
+
+JAVA网站
+Tomcat,weblogic,websphere,Jboss,resin
+
+
+
+tomcat[java编写的Web服务器]
+
+安装并启动tomcat：
+cd lnmp_soft
+tar -xf apache-tomcat-....
+mv apache-tomcat...   /usr/local/tomcat
+/usr/local/tomcat/bin/startup.sh  启动服务
+
+测试页面访问：
+firefox  http://192.168.2.100:8080
+
+
+tomcat配置文件模版框架：
+vim /usr/local/tomcat/conf/server.xml
+<server>
+		<service>
+			<connector port=8080 />
+			<engine default=localhost>
+					<host name=a>
+					</host>
+					<host name=localhost>
+					</host>
+			</engine>
+			</service>
+</server>
+
+
+
+实验1：虚拟主机www.a.com,www.b.com
+vim /usr/local/tomcat/conf/server.xml
+... ...
+	<Engine ...>
+		<Host name="www.a.com"  appBase="a"
+    unpackWARs="true" autoDeploy="true">
+    </Host>
+    <Host name="www.b.com"  appBase="b"
+    unpackWARs="true" autoDeploy="true">
+    </Host>   
+	</Engine>
+#cd /usr/local/tomcat/
+#mkdir -p {a,b}/ROOT
+#echo "AAA" > a/ROOT/index.html
+#echo "BBB" > b/ROOT/index.html
+#/usr/local/tomcat/bin/shutdown.sh
+#/usr/local/tomcat/bin/startup.sh
+
+
+实验2：设置网页ROOT路径
+#vim /usr/local/tomcat/conf/server.xml
+... ...
+<Host name="www.a.com" appBase="a" unpackWARS="true" autoDeploy="true">
+<Context path="" docBase="base" reloadable="true"/>
+</Host>
+<Host name="www.b.com" appBase="b" unpackWARS="true" autoDeploy="true"> 
+</Host>
+#mkdir -p /usr/local/tomcat/a/base
+#echo "base" > /usr/local/tomcat/a/base/index.html
+#/usr/local/tomcat/bin/shutdown.sh
+#/usr/local/tomcat/bin/startup.sh
+
+
+实验3：
+#vim /usr/local/tomcat/conf/server.xml
+... ...
+<Host name="www.a.com" appBase="a" unpackWARS="true" autoDeploy="true">
+<Context path="/test" docBase="/var/www/html/" reloadable="true"/>
+</Host>
+
+#/usr/local/tomcat/bin/shutdown.sh
+#/usr/local/tomcat/bin/startup.sh
+
+测试是否打开/var/www/html下的首页：
+#firefox http://www.a.com:8080/test/
+
+ftp://192.168.2.100/share/operation_note/day04.txt
+
+
+
+
+rm -rf /usr/local/tomcat
+重新解压tomcat
+SSL加密网站：
+# keytool -genkeypair -alias tomcat -keyalg RSA -keystore /usr/local/tomcat/keystore  
+备注：
+-genkeypair 生成密钥
+-alias 别名
+-keyalg 算法为RSA
+-keystore 密钥文件存储路径及文件名
+# keytool -genkeypair --help【查看帮助】
+vim /usr/local/tomcat/conf/server.xml
+... ...84行左右
+<Connector port="8443"
+protocol="org.apache.coyote.http11.Http11NioProtocol"
+maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+keystoreFile="/usr/local/tomcat/keystore" keystorePass="123456"
+clientAuth="false" sslProtocol="TLS" />
+重启服务
+
+firefox https://192.168.2.100:8443
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

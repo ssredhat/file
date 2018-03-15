@@ -1,0 +1,202 @@
+版本控制subversion
+文档[java,conf,shell,PPT]
+多人协作办公
+
+192.168.2.100
+1.安装软件
+#yum -y install subversion
+
+2.创建仓库目录
+#mkdir  /var/svn/			//普通目录
+#svnadmin create /var/svn/project1   //创建仓库
+
+3.导入一些文档[配置文件或shell或java或php脚本]
+
+#cd /usr/lib/systemd/system
+#svn import . file:///var/svn/project1  -m "service config file"
+//将当前目录下的文档，导入到SVN仓库，-m后设置描述信息
+
+4.查看导入的文档
+#svn list  file:///var/svn/project1
+
+
+5.修改配置文件
+#cd   /var/svn/project1/conf
+#vim  svnserve.conf
+19:anon-access = none			//匿名没有权限
+20:auth-access = write		//认证用户可读可写
+27:password-db = passwd		//账户信息文件
+34:authz-db = authz       //权限配置文件
+#vim  passwd
+tom = 123456						//账户与密码
+jerry = 123456					//账户与密码
+#vim   authz
+[/]
+tom = rw
+jerry = rw
+#svnserve -d  -r /var/svn/project1/
+启动服务，共享仓库，仓库目录为/var/svn/project1/
+启动的端口号为3690
+
+
+客户端：192.168.2.200操作：
+1.下载代码到本地副本
+#mkdir /temp
+#cd /temp
+#svn --username tom --password 123456  co  svn://192.168.2.100  code
+//将服务器上的文档下载到本地code目录下
+//co(checkout）下载，code目录会自动创建
+#svn co  svn://192.168.2.100  code
+
+2.本地修改代码，上传到服务器
+#cd code
+#任意修改任意文件
+#svn  ci  -m  "任意字符"
+commit(ci)提交代码
+
+3.连接服务器将本地副本的数据更新
+#svn  update
+
+4.查看历史记录
+#svn   log   svn://192.168.2.100
+
+5.新建文档
+#echo "abc" > a.conf    //普通文件
+#svn  add   a.conf			//让svn识别该文件
+#svn  ci  -m  "test"    //提交修改
+
+6.删除文档
+#svn 	rm 			usbmuxd.service  
+#svn 	cp  		old   new
+#svn 	mkdir		test
+#svn  mv			old   new
+
+7.查看本地副本和服务器的差异
+#svn diff								//查看所有差异
+#svn diff zram.service	//查看某个文件的差异
+
+8.查看服务器上版本文档的全部内容
+#svn cat  svn://192.168.2.100/文件名
+
+9.如果恢复数据
+     1)本地修改但没有提交
+	  #svn   revert   文件名
+    2）本地修改，并提交了服务器（大量数据需要还原)
+    # cd  /temp
+    # svn co -r1  svn://192.168.2.100 mycode
+		从服务器下载版本2中的所有代码
+    3）本地修改，并提交了服务器（个别数据需要还原)
+    # cd /temp/code
+    # svn  merge  -r6:1  文件名
+		//将某一个文件从第6个版本还原到第1个版本
+
+
+案例：多人协同办公
+1.修改不同文件
+tom# sed -i  '1a tom modify this file' zram.service
+
+jerry#sed -i '$a jerry modify' user.slice
+
+tom		#	svn ci -m "ttt"			成功
+jerry	#	svn ci -m "test"   	成功
+tom		#	svn update
+jerry	# svn update
+
+2.修改相同文件的不同行（修改之前9版本)
+tom		# sed -i  '2c  xxxx'  umount.target
+jerry # sed -i  '3c  yyyy'  umount.target
+
+tom		# svn  ci  -m "注释"		//成功（10版本)
+
+jerry # svn  ci  -m "注释"      //失败(X版本)
+jerry # svn   update				//合并文件(10和X)
+jerry # svn  ci  -m "注释"      //成功(11版本)
+3.修改相同文件的相同行
+tom   #sed -i '1c [unit]'  upower.service
+jerry #sed -i '1c [UNIT]'  upower.service
+
+tom   # svn  ci  -m "注释"	    //成功
+
+jerry # svn  ci -m "注释"     //失败，提示过期
+jerry # svn  update				//失败，提示冲突
+				选择p，稍后解决
+解决冲突，需要把多余的文件删除，最后仅保留一个最终版本的文档
+jerry #  svn  ci  -m "注释"    //成功
+
+
+#svn  log  svn://192.168.2.100 
+#svn  cat  svn://192.168.2.100/a.txt
+#vim  test.sh
+#svn  add  test.sh
+#svn  rm   test.sh
+#svn  mv   test.sh   a.sh
+#svn  mkdir  tmp
+#svn  revert  文件
+#svn  -r1  co  svn://192.168.2.100  
+下载任意版本的代码
+#svn -r1 cat svn://192.168.2.100/a.txt
+#svn  merge -r10:2  文件名
+
+管理员备份仓库 
+#du -sh /var/svn/project1
+1.备份：
+#svnadmin dump /var/svn/project1/ >pro.bak
+2.还原数据
+#svnadmin load /var/svn/project2 < pro.bak
+
+
+
+从RHEL光盘的Packages/目录中，拷贝一个软件包，到一个空目录
+如：
+#cp httpd-2.4.6-40.el7.x86_64.rpm /temp
+#cd /temp
+#rpm2cpio httpd-2.4.6-40.el7.x86_64.rpm |cpio -ivd
+注意管道符号|
+#rpm -qpi  httpd-2.4.6-40.el7.x86_64.rpm
+#rpm -qpl  httpd-2.4.6-40.el7.x86_64.rpm
+
+RPM对数据压缩包，写描述信息
+
+源码包---RPM[数据打包+写描述信息]
+
+#yum -y  install rpm-build
+#ls  /root/			 观察目录结构
+#rpmbuild  -ba  a.spec     //会报错
+#ls  /root       观察目录结构
+
+#cd  /root/rpmbuild
+#cp nginx-1.8.0.tar.gz  /root/rpmbuild/SOURCES/
+#vim  /root/rpmbuild/SPECS/nginx.spec
+Name:nginx
+Version:1.8.0
+Release:12
+Summary:this is a web server
+#Group:         
+License:GPL
+URL:www.a.com
+Source0:nginx-1.8.0.tar.gz
+#BuildRequires: 
+#Requires:      
+%description
+this is a web server too
+
+%prep						//安装前准备工作
+%setup -q				//解压源码，cd进去
+%build							//编译
+./configure
+make %{?_smp_mflags}
+%install						//安装软件
+make install DESTDIR=%{buildroot}
+%files			//你准备把那些内容打包
+%doc
+/usr/local/nginx/*
+
+#yum -y install gcc zlib-devel pcre-devel
+#rpmbuild -ba /root/rpmbuild/SPECS/nginx.spec
+
+#ls /root/rpmbuild/RPMS/x86/软件
+
+
+
+
+
